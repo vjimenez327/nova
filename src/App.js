@@ -3,8 +3,9 @@ import fetch from 'isomorphic-fetch';
 import logo from './logo.svg';
 import { BACKEND_SERVER_PORT } from './constants';
 import './App.css';
-import ListReport from './ListReport';
-import DateField from './DateField';
+import ListReport from './components/ListReport';
+import DateField from './components/DateField';
+import Pagination from './components/Pagination';
 
 let SERVICE_URL = `http://localhost:${BACKEND_SERVER_PORT}/api/requests`;
 
@@ -14,18 +15,16 @@ class App extends Component {
 
 		this.state = {
 			result: [],
-			qsParams: {
-				cursor: ''
-			}
+			date:'',
+			pageCount: '',
+			currentPage: 1,
 		}
 	}
 
-	 getReportData = () => {
-		let qs = '?' + Object.keys(this.state.qsParams)
-		.map(k => k + '=' + this.state.qsParams[k])
-		.join('&');
-
-		fetch(SERVICE_URL + qs)
+	 getReportData = (date = '') => {
+		let cursor = date ? `?cursor=${date}` : `?cursor=${this.state.date}`;
+		let count = this.state.pageCount ? `&count=${this.state.pageCount}` : '';
+		fetch(SERVICE_URL + cursor + count)
 		.then(res => res.json())
 		.then(result => {
 			this.setState({ 
@@ -38,43 +37,54 @@ class App extends Component {
 		this.getReportData();
 	}
 
-	setReportDate = async (newDate) => {
-		await this.setState({
-			qsParams : {
-				...this.state.qsParams,
-				cursor: newDate
-			} 
+	setReportDate = (newDate) => {
+		this.setState({
+			...this.state,
+			date: newDate
 		})
 
-		await this.getReportData();
+	 this.getReportData(newDate);
 	}
 
-	updateReportData = async () => {
-		await this.getReportData();
+	updateReportData = () => {
+		 this.getReportData();
 	}
 
-
- getFormattedDate() {
-	var today = new Date();
-	var dd = today.getDate();
-	var mm = today.getMonth()+1; 
-	var yyyy = today.getFullYear();
-	return yyyy + "-" + mm + "-" + dd  ;
-}
+	setCurrentPage = (number) => {
+		this.setState({
+			...this.state,
+			currentPage: number
+		})
+	} 
 
 	render() {
 		let reports = this.state.result.reports || [];
-		let date = this.state.qsParams.cursor || this.getFormattedDate();
+		let date = this.state.date || new Date().toISOString();
+		let reportsPerPage = parseInt(this.state.pageCount, 10) || 20;
+
+		const indexOfLastReport = this.state.currentPage * reportsPerPage
+		const indexOfFirstReport = indexOfLastReport - reportsPerPage;
+		const currentReports = reports.slice(indexOfFirstReport, indexOfLastReport);
 		
+		console.log(reports);
+
 		return (
 			<div className="App">
 				<header className="App-header">
 					<img src={logo} className="App-logo" alt="logo" />
-					<h1 className="App-title">Welcome to Nova's code challenge!</h1>
-					</header>
+					<h1 className="App-title">Please Choose a Date for the Credit Scores Report!</h1>
+				</header>
+				<div className="container">
 					<DateField date={date} setNewReportDate={this.setReportDate} />
-					<ListReport reports={reports} archiveReport = {this.archiveReport} updateReportData = {this.updateReportData} /> 
-
+					<ListReport 
+					reports={currentReports} 
+					archiveReport = {this.archiveReport} updateReportData = {this.updateReportData} /> 
+					<Pagination 
+					reportsPerPage={reportsPerPage} 
+					totalReports={reports.length}
+					paginate={this.setCurrentPage}
+					/>
+				</div>
 			</div>
 		);
 	}

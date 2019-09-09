@@ -23,9 +23,9 @@ export default function ArchiveReport(props) {
     });
 	}
 
-  const handleClick = async (e) => {
+  const handleClick = (e) => {
     e.preventDefault();
-    await archiveReport(props.reportId);
+    archiveReport(props.reportId);
   }
 
   return (
