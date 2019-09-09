@@ -65,8 +65,6 @@ class App extends Component {
 		const indexOfLastReport = this.state.currentPage * reportsPerPage
 		const indexOfFirstReport = indexOfLastReport - reportsPerPage;
 		const currentReports = reports.slice(indexOfFirstReport, indexOfLastReport);
-		
-		console.log(reports);
 
 		return (
 			<div className="App">
